@@ -1,0 +1,26 @@
+package Patajos;
+import robocode.*;
+import java.awt.Color;
+
+/**
+ * Patajos - a class by (Patajos Teste)
+ */
+public class Patajos extends Robot {
+  public void run() {
+	  setColors(Color.red,Color.black,Color.red,Color.red,Color.black);
+	  while(true) {
+	      ahead(110);
+		  turnGunRight(300);
+		  turnGunLeft(-180);
+		  turnLeft(-120);
+	 }
+  }
+   public void onScannedRobot(ScannedRobotEvent e) {
+	   fire(3);
+   }
+   //colisão com a parede
+   public void onHitWall(HitWallEvent e) {
+	   back(150);
+	   turnRight(180);
+   }
+}
