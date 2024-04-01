@@ -1,4 +1,4 @@
-package supremo;
+package tapajos;
 import robocode.*;
 import java.awt.Color;
 
