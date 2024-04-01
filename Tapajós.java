@@ -1,64 +1,102 @@
-package Tapajós;
+package supremo;
 import robocode.*;
 import java.awt.Color;
 
+public class RoboTapajos extends AdvancedRobot {
 
-// API help : https://robocode.sourceforge.io/docs/robocode/robocode/Robot.html
+    private double angulo = 0;
+    private boolean direcao = true;
+    private boolean mudarRota = false;
+    private Enemy maisProximo = null;
 
-/**
- * Tapajós - a robot by (your name here)
- */
-public class Tapajós extends AdvancedRobot
-{
-	/**
-	 * run: Tapajós's default behavior
-	 */
-	public void run() {
-		// Initialization of the robot should be put here
+    public void run() {
+        setBodyColor(new Color(0, 0, 255));
+        setGunColor(new Color(255, 255, 255));
+        setRadarColor(new Color(255, 255, 255));
 
-		// After trying out your robot, try uncommenting the import at the top,
-		// and the next line:
+        while (true) {
+            setTurnRadarRight(360);
 
-		// setColors(Color.red,Color.blue,Color.green); // body,gun,radar
-		
-                setBodyColor(Color.red);      // Body => corpo
-		setGunColor(Color.black);      // Gun => Arma
-		setRadarColor(Color.red);     // Radar => Radar
-		
-		setScanColor(Color.red);     // Sacn => varredura
-		setBulletColor(Color.black);    // Bullet => Bala  
-		// Robot main loop
-		while(true) {
-			// Replace the next 4 lines with any behavior you would like
-			ahead(110);
-			turnGunRight(300);
-			turnGunLeft(-180);
-			turnLeft(-120);
-		}
-	}
+            if (getRadarTurnRemaining() == 0) {
+                if (mudarRota) {
+                    mudarRota = false;
+                    angulo = 0;
+                    direcao = !direcao;
+                }
 
-	/**
-	 * onScannedRobot: What to do when you see another robot
-	 */
-	public void onScannedRobot(ScannedRobotEvent e) {
-		// Replace the next line with any behavior you would like
-		fire(3);
-	}
+                maisProximo = null;
+                double distanciaMinima = Double.MAX_VALUE;
 
-	/**
-	 * onHitByBullet: What to do when you're hit by a bullet
-	 */
-	public void onHitByBullet(HitByBulletEvent e) {
-		// Replace the next line with any behavior you would like
-		back(150);
-		turnRight(180);
-	}
-	
-	/**
-	 * onHitWall: What to do when you hit a wall
-	 */
-	public void onHitWall(HitWallEvent e) {
-		// Replace the next line with any behavior you would like
-		back(50);
-	}	
+                ScannedRobotEvent e = getScannedRobotEvent();
+                while (e != null) {
+                    double distancia = e.getDistance();
+                    if (distancia > 150 && distancia < distanciaMinima) {
+                        distanciaMinima = distancia;
+                        maisProximo = new Enemy(e.getBearing(), e.getHeading(), e.getVelocity());
+                    }
+                    e = getScannedRobotEvent();
+                }
+
+                if (maisProximo != null) {
+                    fireBullet(2.5, calcularAnguloMira(maisProximo));
+                }
+
+                angulo += velocidadeAngular * getTime();
+
+                if (angulo >= 90 && direcao) {
+                    direcao = false;
+                    setAhead(velocidadeLinear);
+                } else if (angulo < 0 && !direcao) {
+                    direcao = true;
+                    setAhead(velocidadeLinear);
+                }
+
+                ajustarVelocidade();
+            }
+
+            execute();
+        }
+    }
+
+    public void onHitByBullet(BulletHitEvent e) {
+        mudarRota = true;
+    }
+
+    public void onHitWall(HitWallEvent e) {
+        mudarRota = true;
+    }
+
+    private double calcularAnguloMira(Enemy inimigo) {
+        double anguloRelativo = inimigo.bearing - getHeading();
+        double anguloMira = getHeading() + anguloRelativo + (inimigo.heading - anguloRelativo) * getTime() / inimigo.distancia;
+        return anguloMira;
+    }
+
+    private void ajustarVelocidade() {
+        if (angulo > 0 && angulo < 45) {
+            setTurnRight(velocidadeAngular * 2);
+        } else if (angulo > 45 && angulo < 90) {
+            setTurnRight(velocidadeAngular);
+        } else if (angulo > 270 && angulo < 315) {
+            setTurnLeft(velocidadeAngular * 2);
+        } else if (angulo > 315 && angulo < 360) {
+            setTurnLeft(velocidadeAngular);
+        } else {
+            setTurnRight(0);
+        }
+    }
+
+    private class Enemy {
+        double bearing;
+        double heading;
+        double velocity;
+        double distancia;
+
+        public Enemy(double bearing, double heading, double velocity) {
+            this.bearing = bearing;
+            this.heading = heading;
+            this.velocity = velocity;
+            this.distancia = getScannedRobotEvent().getDistance();
+        }
+    }
 }
